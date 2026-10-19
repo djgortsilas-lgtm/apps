@@ -140,6 +140,7 @@
     border: 3px dashed var(--ink);
     border-radius: 18px 60px 22px 55px / 55px 22px 60px 18px;
     overflow: hidden;
+    transition: transform .25s ease;
   }
 
   .tile .art::after {
@@ -156,10 +157,37 @@
     position: relative;
     z-index: 1;
     filter: drop-shadow(3px 4px 0 rgba(0,0,0,0.3));
-    transition: transform .25s ease;
+    animation: icon-bob 2.4s ease-in-out infinite;
   }
 
-  .tile:hover .art span { transform: scale(1.14) rotate(-8deg); }
+  .tile:nth-child(1) .art span { animation: icon-fly 3s ease-in-out infinite; }
+  .tile:nth-child(2) .art span { animation: icon-wobble 1.7s ease-in-out infinite; }
+  .tile:nth-child(3) .art span { animation: icon-roll 5s ease-in-out infinite; }
+  .tile:nth-child(n+4) .art span { animation: icon-bob 2.4s ease-in-out infinite; }
+
+  .tile:hover .art { transform: scale(1.06); }
+
+  @keyframes icon-bob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-9px) rotate(5deg); }
+  }
+
+  @keyframes icon-fly {
+    0%   { transform: translate(-16px, 12px) rotate(-14deg); }
+    50%  { transform: translate(16px, -14px) rotate(10deg); }
+    100% { transform: translate(-16px, 12px) rotate(-14deg); }
+  }
+
+  @keyframes icon-wobble {
+    0%, 100% { transform: rotate(-15deg) scale(1); }
+    50%      { transform: rotate(15deg) scale(1.07); }
+  }
+
+  @keyframes icon-roll {
+    0%   { transform: rotate(0deg) scale(1); }
+    50%  { transform: rotate(180deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
 
   .tile .info {
     position: relative;
@@ -202,6 +230,10 @@
   .tile:hover .arrow, .tile:focus-visible .arrow {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile .art span { animation: none !important; }
   }
 
   @media (max-width: 520px) {
