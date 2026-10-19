@@ -204,21 +204,95 @@
     transform: translateY(0);
   }
 
-  footer {
-    max-width: 1180px;
-    margin: 60px auto 0;
-    text-align: center;
-    font-family: "Caveat", cursive;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #555;
+  #cat {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 50;
+    pointer-events: none;
+    will-change: transform;
   }
 
-  footer span {
-    display: inline-block;
-    border-bottom: 3px dotted var(--red);
-    padding-bottom: 2px;
-    transform: rotate(-.8deg);
+  #cat .cat-svg {
+    display: block;
+    overflow: visible;
+  }
+
+  #cat.flip .cat-svg { transform: scaleX(-1); }
+
+  #cat .cat-tail {
+    transform-origin: 14px 26px;
+    animation: tail-sway 1.8s ease-in-out infinite;
+  }
+
+  #cat.walking .cat-tail { animation-duration: .6s; }
+
+  #cat .cat-legs line {
+    transform-box: fill-box;
+    transform-origin: top center;
+  }
+
+  #cat.walking .leg-front { animation: leg-swing .3s ease-in-out infinite alternate; }
+  #cat.walking .leg-back  { animation: leg-swing .3s ease-in-out infinite alternate-reverse; }
+  #cat.jumping .cat-legs { transform: translateY(-2px) rotate(-8deg); transform-origin: 24px 28px; }
+  #cat.jumping .cat-tail { animation-play-state: paused; transform: rotate(-25deg); }
+
+  #cat.landing .cat-svg { animation: cat-squash .28s ease; }
+
+  #cat .cat-bubble {
+    position: absolute;
+    left: 70%;
+    bottom: 95%;
+    white-space: nowrap;
+    font-family: "Caveat", cursive;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--ink);
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 40% 60% 55% 45%;
+    padding: 2px 10px 4px;
+    box-shadow: 3px 3px 0 rgba(0,0,0,.2);
+    opacity: 0;
+    transform: translateY(4px) rotate(-2deg) scale(.85);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+
+  #cat .cat-bubble::after {
+    content: "";
+    position: absolute;
+    left: 12px; bottom: -9px;
+    width: 10px; height: 10px;
+    background: #fff;
+    border-right: 2.5px solid var(--ink);
+    border-bottom: 2.5px solid var(--ink);
+    transform: rotate(45deg);
+  }
+
+  #cat.meow .cat-bubble {
+    opacity: 1;
+    transform: translateY(0) rotate(-2deg) scale(1);
+  }
+
+  @keyframes tail-sway {
+    0%, 100% { transform: rotate(-12deg); }
+    50%      { transform: rotate(18deg); }
+  }
+
+  @keyframes leg-swing {
+    from { transform: rotate(-18deg); }
+    to   { transform: rotate(18deg); }
+  }
+
+  @keyframes cat-squash {
+    0%   { transform: scaleY(1) scaleX(1); }
+    40%  { transform: scaleY(.78) scaleX(1.15); }
+    100% { transform: scaleY(1) scaleX(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #cat .cat-tail,
+    #cat.walking .leg-front,
+    #cat.walking .leg-back { animation: none; }
   }
 
   @media (max-width: 520px) {
@@ -240,7 +314,27 @@
 
 <main class="grid" id="apps"></main>
 
-<footer>σχεδιασμένο με <span>πολλή αγάπη</span> ✎</footer>
+<div id="cat" aria-hidden="true" hidden>
+  <span class="cat-bubble">μιαυ!</span>
+  <svg class="cat-svg" width="46" height="40" viewBox="0 0 48 40" xmlns="http://www.w3.org/2000/svg">
+    <g class="cat-tail" fill="none" stroke="#1b1b1b" stroke-width="3.5" stroke-linecap="round">
+      <path d="M14 26 C6 27 3 17 7 10" />
+    </g>
+    <g class="cat-legs" fill="none" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round">
+      <line class="leg leg-back"  x1="15" y1="28" x2="13" y2="37" />
+      <line class="leg leg-front" x1="31" y1="28" x2="33" y2="37" />
+    </g>
+    <ellipse cx="24" cy="24" rx="14" ry="9" fill="#fff" stroke="#1b1b1b" stroke-width="3" />
+    <path d="M32 10 L31 3 L37 8" fill="#fff" stroke="#1b1b1b" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M39 7 L43 2 L44 10" fill="#fff" stroke="#1b1b1b" stroke-width="2.5" stroke-linejoin="round" />
+    <circle cx="38" cy="15" r="8" fill="#fff" stroke="#1b1b1b" stroke-width="3" />
+    <circle cx="40" cy="14" r="1.6" fill="#1b1b1b" />
+    <path d="M43 17 q2.5 1.5 4 0" fill="none" stroke="#1b1b1b" stroke-width="1.5" stroke-linecap="round" />
+    <path d="M44 14.5 h5 M44 17 h5.5" stroke="#1b1b1b" stroke-width="1.2" stroke-linecap="round" />
+  </svg>
+</div>
+
+
 
 <script>
   /* ============================================================
@@ -275,6 +369,162 @@
       <div class="arrow">GO ↗</div>`;
     root.appendChild(a);
   });
+
+  /* ------------------------------------------------------------
+     Η ΓΑΤΑΣ: τριγυρνάει πάνω από τα tiles και πηδάει από
+     "παράθυρο" σε "παράθυρο"
+     ------------------------------------------------------------ */
+  (function catWander() {
+    const cat = document.getElementById("cat");
+    const bubble = cat.querySelector(".cat-bubble");
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const CAT_W = 46, CAT_H = 40;
+    let tiles = [];
+    let current = null;
+    let x = 0, y = 0;
+    let facing = 1;
+    let busy = false;
+
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function collect() {
+      tiles = [...document.querySelectorAll(".tile")].map(el => {
+        const r = el.getBoundingClientRect();
+        return { el, left: r.left, right: r.right, top: r.top, width: r.width };
+      });
+    }
+
+    function place(px, py) {
+      x = px; y = py;
+      cat.style.transform = `translate(${px - CAT_W / 2}px, ${py - CAT_H}px)`;
+    }
+
+    function face(dir) {
+      facing = dir;
+      cat.classList.toggle("flip", dir < 0);
+    }
+
+    function meow() {
+      bubble.textContent = Math.random() < 0.5 ? "μιαυ!" : "νιάου~";
+      cat.classList.add("meow");
+      setTimeout(() => cat.classList.remove("meow"), 1400);
+    }
+
+    function spotOn(tile) {
+      const pad = 18;
+      const inner = Math.max(1, tile.width - CAT_W - pad * 2);
+      return tile.left + pad + rand(0, inner);
+    }
+
+    async function stroll(tile) {
+      const tx = spotOn(tile);
+      if (Math.abs(tx - x) < 6) return;
+      face(tx > x ? 1 : -1);
+      const x1 = x, dur = Math.min(1400, 400 + Math.abs(tx - x1) * 2.2);
+      cat.classList.add("walking");
+      const t0 = performance.now();
+      await new Promise(res => {
+        (function frame(t) {
+          const p = Math.min(1, (t - t0) / dur);
+          const nx = x1 + (tx - x1) * p;
+          place(nx, y - Math.abs(Math.sin(p * Math.PI * 6)) * 2.5);
+          if (p < 1) requestAnimationFrame(frame);
+          else { place(tx, y); res(); }
+        })(performance.now());
+      });
+      cat.classList.remove("walking");
+    }
+
+    async function jump(target) {
+      const tx = spotOn(target), ty = target.top;
+      const x1 = x, y1 = y;
+      const dist = Math.hypot(tx - x1, ty - y1);
+      const apex = Math.min(85, 34 + dist * 0.18);
+      const dur = Math.min(950, 380 + dist * 0.5);
+      face(tx >= x1 ? 1 : -1);
+      cat.classList.add("jumping");
+      const t0 = performance.now();
+      await new Promise(res => {
+        (function frame(t) {
+          const p = Math.min(1, (t - t0) / dur);
+          const nx = x1 + (tx - x1) * p;
+          const ny = y1 + (ty - y1) * p - apex * 4 * p * (1 - p);
+          place(nx, ny);
+          if (p < 1) requestAnimationFrame(frame);
+          else { place(tx, ty); res(); }
+        })(performance.now());
+      });
+      cat.classList.remove("jumping");
+      cat.classList.add("landing");
+      setTimeout(() => cat.classList.remove("landing"), 300);
+      if (Math.random() < 0.55) meow();
+    }
+
+    function nearest() {
+      if (!tiles.length) return null;
+      let best = null, bd = Infinity;
+      for (const t of tiles) {
+        const d = Math.abs((t.left + t.right) / 2 - x) + Math.abs(t.top - y) * 2;
+        if (d < bd) { bd = d; best = t; }
+      }
+      return best;
+    }
+
+    async function wander() {
+      while (true) {
+        collect();
+        if (!tiles.length) { await sleep(800); continue; }
+
+        const from = tiles.includes(current) ? current : (current = nearest());
+        await stroll(from);
+        if (Math.random() < 0.35) { await sleep(rand(700, 1800)); }
+
+        collect();
+        const others = tiles.filter(t => t !== from);
+        if (others.length) {
+          const target = others.reduce((a, b) => {
+            const da = Math.abs((a.left + a.right) / 2 - x);
+            const db = Math.abs((b.left + b.right) / 2 - x);
+            return Math.random() < db / (da + db + 1e-6) ? b : a;
+          });
+          await jump(target);
+          current = target;
+        }
+        await sleep(rand(900, 2600));
+      }
+    }
+
+    function rehome() {
+      collect();
+      const t = tiles.includes(current) ? current : (current = nearest());
+      if (t) place(spotOn(t), t.top);
+    }
+
+    function start() {
+      collect();
+      if (!tiles.length) { setTimeout(start, 300); return; }
+      current = tiles[Math.floor(Math.random() * tiles.length)];
+      cat.hidden = false;
+      place(spotOn(current), current.top);
+      if (reduced) return;
+      wander();
+      let raf = 0;
+      const onMove = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          if (busy || cat.classList.contains("walking") || cat.classList.contains("jumping")) return;
+          rehome();
+        });
+      };
+      window.addEventListener("resize", onMove);
+      window.addEventListener("scroll", onMove, { passive: true });
+    }
+
+    window.addEventListener("load", () => setTimeout(start, 400));
+  })();
+
 </script>
 
 </body>
