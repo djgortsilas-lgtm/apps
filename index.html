@@ -93,19 +93,6 @@
     transform: rotate(.6deg);
   }
 
-  header p span {
-    position: relative;
-    white-space: nowrap;
-  }
-
-  header p span::after {
-    content: "";
-    position: absolute;
-    left: 2px; right: 2px; bottom: -1px;
-    border-bottom: 3px dotted var(--red);
-    transform: rotate(-.7deg);
-  }
-
   .grid {
     max-width: 1180px;
     margin: 0 auto;
@@ -291,7 +278,7 @@
 
 <header>
   <h1>ΣΥΛΛΟΓΗ<br>ΕΦΑΡΜΟΓΩΝ</h1>
-  <p>Μικρές εφαρμογές για την καθημερινότητα — <span>διάλεξε μία!</span></p>
+  <p>Μικρές εφαρμογές για την καθημερινότητα</p>
 </header>
 
 <main class="grid" id="apps"></main>
